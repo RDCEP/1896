@@ -85,8 +85,9 @@ latidx, lonidx = where(logical_not(mask.mask))
 # downscale to grid level
 nyears, nlats, nlons, nirr = len(time), len(mlats), len(mlons), len(irr)
 sh = (nyears, nlats, nlons, nirr)
-yld  = masked_array(zeros(sh), mask = ones(sh))
-area = masked_array(zeros(sh), mask = ones(sh))
+yld   = masked_array(zeros(sh), mask = ones(sh))
+area  = masked_array(zeros(sh), mask = ones(sh))
+darea = masked_array(zeros(sh), mask = ones(sh)) # downscaled area
 for i in range(len(latidx)):
     l1, l2 = latidx[i], lonidx[i]
     aidx1, aidx2 = where(alats == mlats[l1])[0][0], where(alons == mlons[l2])[0][0]
@@ -98,7 +99,8 @@ for i in range(len(latidx)):
     cidx2 = where(acounties == cmap[midx])[0][0]
 
     # sample yield
-    yld[:,  l1, l2, :] = ryld[:, cidx1]
+    yld[:,  l1, l2, :] = ryld[:,  cidx1]
+    area[:, l1, l2, :] = rarea[:, cidx1]
 
     # scale area
     a_x_rf, a_x_ir = arf[aidx1, aidx2], air[aidx1, aidx2]
@@ -107,28 +109,28 @@ for i in range(len(latidx)):
         a_r_rf, a_r_ir = rarea[t, cidx1, rfidx], rarea[t, cidx1, iridx]
 
         if not a_c_ir and not a_c_rf:
-            area[t, l1, l2] = 0
+            darea[t, l1, l2] = 0
         elif (a_c_rf and a_r_rf / a_c_rf > 20) or (a_c_ir and a_r_ir / a_c_ir > 20):
             ratio = (a_x_rf + a_x_ir) / (a_c_rf + a_c_ir)
-            area[t, l1, l2, iridx] = ratio * a_r_ir
-            area[t, l1, l2, rfidx] = ratio * a_r_rf
+            darea[t, l1, l2, iridx] = ratio * a_r_ir
+            darea[t, l1, l2, rfidx] = ratio * a_r_rf
         elif not a_c_ir and a_c_rf:
-            area[t, l1, l2, rfidx] = a_x_rf * (a_r_rf / a_c_rf)
+            darea[t, l1, l2, rfidx] = a_x_rf * (a_r_rf / a_c_rf)
             if a_r_rf:
-                area[t, l1, l2, iridx] = area[t, l1, l2, rfidx] * (a_r_ir / a_r_rf)
+                darea[t, l1, l2, iridx] = darea[t, l1, l2, rfidx] * (a_r_ir / a_r_rf)
             else:
-                area[t, l1, l2, iridx] = a_x_rf * (a_r_ir / a_c_rf)
+                darea[t, l1, l2, iridx] = a_x_rf * (a_r_ir / a_c_rf)
         elif a_c_ir and not a_c_rf:
-            area[t, l1, l2, iridx] = a_x_ir * (a_r_ir / a_c_ir)
+            darea[t, l1, l2, iridx] = a_x_ir * (a_r_ir / a_c_ir)
             if a_r_ir:
-                area[t, l1, l2, rfidx] = area[t, l1, l2, iridx] * (a_r_rf / a_r_ir)
+                darea[t, l1, l2, rfidx] = darea[t, l1, l2, iridx] * (a_r_rf / a_r_ir)
             else:
-                area[t, l1, l2, rfidx] = a_x_ir * (a_r_rf / a_c_ir)
+                darea[t, l1, l2, rfidx] = a_x_ir * (a_r_rf / a_c_ir)
         else:
-            area[t, l1, l2, iridx] = a_x_ir * (a_r_ir / a_c_ir)
-            area[t, l1, l2, rfidx] = a_x_rf * (a_r_rf / a_c_rf)
+            darea[t, l1, l2, iridx] = a_x_ir * (a_r_ir / a_c_ir)
+            darea[t, l1, l2, rfidx] = a_x_rf * (a_r_rf / a_c_rf)
 
-        area[t, l1, l2, sumidx] = area[t, l1, l2, iridx] + area[t, l1, l2, rfidx] # sum
+        darea[t, l1, l2, sumidx] = darea[t, l1, l2, iridx] + darea[t, l1, l2, rfidx] # sum
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', nyears)
@@ -164,3 +166,8 @@ with nc(outputfile, 'w') as f:
     avar[:] = area
     avar.units = 'ha'
     avar.long_name = 'harvested area'
+
+    davar = f.createVariable('area_mirca', 'f4', ('time', 'lat', 'lon', 'irr'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    davar[:] = darea
+    davar.units = 'ha'
+    davar.long_name = 'harvested area'

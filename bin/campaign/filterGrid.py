@@ -32,7 +32,7 @@ for i in range(len(latidx)):
     medv = median(v)
     stdv = v.std()
 
-    v[abs(v - medv) > max(1.5 * stdv, 100)] = medv
+    v[abs(v - medv) > max(1.5 * stdv, 200)] = medv
 
     var[:, latidx[i], lonidx[i]] = v
 
