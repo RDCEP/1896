@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # add to path
-PATH=$PATH:/project/joshuaelliott/1896/src/crop_progress_county
+PATH=$PATH:/project/joshuaelliott/1896/utils
 
 swift -sites.file midway.xml -tc.file tc.data csv2nc.swift
 

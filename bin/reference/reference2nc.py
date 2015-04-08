@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# add paths
+import os, sys
+for p in os.environ['PATH'].split(':'): sys.path.append(p)
+
 # import modules
 from numpy import arange
 from optparse import OptionParser

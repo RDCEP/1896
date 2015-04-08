@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PATH=$PATH:utils
+
 for c in maize soybean sorghum cotton wheat.winter wheat.spring barley; do
     echo Running $c
     if [ $c = wheat.winter ] || [ $c = wheat.spring ]; then
@@ -8,21 +10,21 @@ for c in maize soybean sorghum cotton wheat.winter wheat.spring barley; do
         crop=$c
     fi
 
-    finalfile=$crop/final/$c.crop_progress.2009-2014.nc4
+    finalfile=data/$crop/final/$c.crop_progress.2009-2014.nc4
 
-    src/crop_progress_county/downscaleCropProgressCounty.py --inputfile1 CPoutput/out_2009-2013.final.nc4 \
-                                                            --inputfile2 CPoutput/out_2014.final.nc4      \
-                                                            -c common/USA_adm_all_fips.nc4                \
-                                                            -a $crop/aux/$crop.county.nc4                 \
-                                                            -m $crop/aux/$crop.mask.0.01.nc4              \
-                                                            -n $c                                         \
+    bin/crop_progress_county/downscaleCropProgressCounty.py --inputfile1 data/common/crop_progress.2009-2013.nc4 \
+                                                            --inputfile2 data/common/crop_progress.2014.nc4      \
+                                                            -c data/common/USA_adm_all_fips.nc4                  \
+                                                            -a data/$crop/aux/$crop.county.nc4                   \
+                                                            -m data/$crop/aux/$crop.mask.0.01.nc4                \
+                                                            -n $c                                                \
                                                             -o $finalfile
-    src/crop_progress_county/fillGaps.py -i $crop/final/$c.crop_progress.2009-2014.nc4 \
-                                         -m $crop/aux/$crop.mask.0.01.nc4              \
+    bin/crop_progress_county/fillGaps.py -i $finalfile                         \
+                                         -m data/$crop/aux/$crop.mask.0.01.nc4 \
                                          -o $finalfile.2
     mv $finalfile.2 $finalfile
 
-    finalfileres=$crop/final/$c.crop_progress.2009-2014.residuals.nc4
+    finalfileres=data/$crop/final/$c.crop_progress.2009-2014.residuals.nc4
 
     # compute residuals and residual mean and standard deviation
     for v in planting anthesis maturity; do

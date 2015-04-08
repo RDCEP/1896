@@ -51,12 +51,12 @@ class ReferenceCombiner(object):
 
         # interpolate to common times
         yldsum = self.interpolateTime(self.yldsum, self.ysum.years, years)
-        yldirr = self.interpolateTime(self.yldirr, self.yirr.years, years)
+        yldirr = self.interpolateTime(self.yldirr, self.yirr.years, years, fillgaps = False) # no gap filling!
         hvtsum = self.interpolateTime(self.hvtsum, self.hsum.years, years)
         hvtirr = self.interpolateTime(self.hvtirr, self.hirr.years, years)
 
-        # extrapolate irrigated yield using sum yield
-        yldirr = self.extrapolateYield(yldirr, yldsum, years)
+        # interpolate irrigated yield using sum yield
+        yldirr = self.interpolateYield(yldirr, yldsum, years)
 
         # extrapolate harvested area fraction
         frac = self.extrapolateFrac(frac, hvtsum, hvtirr, years)
@@ -90,7 +90,7 @@ class ReferenceCombiner(object):
                 xnew[:, i] = x[:, idx]
         return xnew
 
-    def interpolateTime(self, x, yx, y):
+    def interpolateTime(self, x, yx, y, fillgaps = True):
         nc = x.shape[1]
 
         xnew = masked_array(zeros((len(y), nc)), mask = ones((len(y), nc)))
@@ -101,7 +101,7 @@ class ReferenceCombiner(object):
             if isMaskedArray(xc):
                 if xc.mask.all(): # all masked -> do nothing
                     continue
-                else:
+                elif fillgaps:
                     yc = yc[~xc.mask]
                     xc = xc[~xc.mask]
                     xc = interp(arange(yc.min(), yc.max() + 1), yc, xc)
@@ -111,7 +111,7 @@ class ReferenceCombiner(object):
 
         return xnew
 
-    def extrapolateYield(self, yirr, ysum, years):
+    def interpolateYield(self, yirr, ysum, years):
         nc = yirr.shape[1]
         nt = len(years)
 
@@ -127,13 +127,18 @@ class ReferenceCombiner(object):
             if not isMaskedArray(delta):
                 idx = logical_and(yi.mask, ~ys.mask)
 
-                # delta shift and variance scale sum data
-                ydelta   = ys[idx] + delta
+                # delta shift sum data
+                ydelta = ys[idx] + delta
+
+                # variance scale sum data
                 ydeltamu = ydelta.mean()
-                ydelta  -= ydeltamu
-                fac      = sqrt(yi.var() / ydelta.var()) if ydelta.var() else 1
-                ydelta  *= fac
-                ydelta  += ydeltamu - ydelta.mean()
+                ydelta2  = ydelta - ydeltamu
+                fac      = sqrt(yi.var() / ydelta2.var()) if ydelta2.var() else 1
+                ydelta2 *= fac
+                ydelta2 += ydeltamu - ydelta2.mean()
+
+                shouldscale = ydelta2 >= ys[idx]
+                ydelta[shouldscale] = ydelta2[shouldscale]
 
                 yi[idx] = ydelta
 
@@ -203,16 +208,16 @@ class ReferenceCombiner(object):
             if area[0] > 0 and area[1] > 0:
                 y = array([ysum, ysum, ysum]) # assume equal irrigated, rainfed yields
             elif area[0] > 0 and area[1] == 0:
-                y = array([ysum, 0, ysum])
+                y = masked_array([ysum, 0, ysum], mask = [0, 1, 0])
             else:
-                y = array([0, ysum, ysum])
+                y = masked_array([0, ysum, ysum], mask = [1, 0, 0])
         else:
             if area[0] > 0 and area[1] > 0:
                 y = array([yirr, yirr, yirr])
             elif area[0] == 0 and area[1] > 0:
-                y = array([0, yirr, yirr])
+                y = masked_array([0, yirr, yirr], mask = [1, 0, 0])
             else:
-                y = array([yirr, 0, yirr])
+                y = masked_array([yirr, 0, yirr], mask = [0, 1, 0])
 
         return y
 
