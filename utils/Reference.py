@@ -53,13 +53,12 @@ class ReferenceCombiner(object):
         yldsum = self.interpolateTime(self.yldsum, self.ysum.years, years)
         yldirr = self.interpolateTime(self.yldirr, self.yirr.years, years, fillgaps = False) # no gap filling!
         hvtsum = self.interpolateTime(self.hvtsum, self.hsum.years, years)
-        hvtirr = self.interpolateTime(self.hvtirr, self.hirr.years, years)
+        hvtirr = self.interpolateTime(self.hvtirr, self.hirr.years, years, fillgaps = False)
 
-        # interpolate irrigated yield using sum yield
-        yldirr = self.interpolateYield(yldirr, yldsum, years)
-
-        # extrapolate harvested area fraction
-        frac = self.extrapolateFrac(frac, hvtsum, hvtirr, years)
+        # extrapolate irrigated yield, sum area, and irrigated area fraction
+        yldirr, delta = self.extrapolateYield(yldirr, yldsum, years)
+        hvtsum        = self.extrapolateTime(hvtsum, years)
+        frac          = self.extrapolateFrac(frac, hvtsum, hvtirr, years)
 
         ny, nc, ni = len(years), len(self.counties), len(self.irr)
         yld = masked_array(zeros((ny, nc, ni)), mask = ones((ny, nc, ni)))
@@ -67,7 +66,7 @@ class ReferenceCombiner(object):
         for i in range(nc):
             for j in range(ny):
                 hvt[j, i] = self.computeArea(hvtsum[j, i],  hvtirr[j, i], frac[j, i])
-                yld[j, i] = self.computeYield(yldsum[j, i], yldirr[j, i], hvt[j, i])
+                yld[j, i] = self.computeYield(yldsum[j, i], yldirr[j, i], hvt[j, i], delta[j, i])
 
             # extrapolate area in time
             for j in range(ni):
@@ -98,24 +97,34 @@ class ReferenceCombiner(object):
             xc = x[:, i]
             yc = yx
 
-            if isMaskedArray(xc):
-                if xc.mask.all(): # all masked -> do nothing
-                    continue
-                elif fillgaps:
-                    yc = yc[~xc.mask]
-                    xc = xc[~xc.mask]
-                    xc = interp(arange(yc.min(), yc.max() + 1), yc, xc)
-                    yc = arange(yc.min(), yc.max() + 1)
+            if isMaskedArray(xc) and not xc.mask.all() and fillgaps:
+                yc = yc[~xc.mask]
+                xc = xc[~xc.mask]
+                xc = interp(arange(yc.min(), yc.max() + 1), yc, xc)
+                yc = arange(yc.min(), yc.max() + 1)
 
             xnew[logical_and(y >= yc.min(), y <= yc.max()), i] = xc[logical_and(yc >= y.min(), yc <= y.max())]
 
         return xnew
 
-    def interpolateYield(self, yirr, ysum, years):
+    def extrapolateTime(self, x, y):
+        nc = x.shape[1]
+
+        xnew = x.copy()
+        for i in range(nc):
+            xc = x[:, i]
+
+            if isMaskedArray(xc) and not xc.mask.all():
+                xnew[:, i] = interp(y, y[~xc.mask], xc[~xc.mask])
+
+        return xnew
+
+    def extrapolateYield(self, yirr, ysum, years):
         nc = yirr.shape[1]
         nt = len(years)
 
         eyld = masked_array(zeros((nt, nc)), mask = ones((nt, nc)))
+        dmat = masked_array(zeros((nt, nc)), mask = ones((nt, nc)))
         for i in range(nc):
             yi = yirr[:, i]
             ys = ysum[:, i]
@@ -126,6 +135,8 @@ class ReferenceCombiner(object):
             delta = (yi - ys).mean()
             if not isMaskedArray(delta):
                 idx = logical_and(yi.mask, ~ys.mask)
+
+                dmat[yi.mask, i] = delta
 
                 # delta shift sum data
                 ydelta = ys[idx] + delta
@@ -144,7 +155,7 @@ class ReferenceCombiner(object):
 
             eyld[:, i] = yi
 
-        return eyld
+        return eyld, dmat
 
     def extrapolateFrac(self, frac, hsum, hirr, years):
         nt, nc = frac.shape
@@ -186,7 +197,7 @@ class ReferenceCombiner(object):
 
         return h
 
-    def computeYield(self, ysum, yirr, area):
+    def computeYield(self, ysum, yirr, area, delta):
         hassum = not isMaskedArray(ysum)
         hasirr = not isMaskedArray(yirr)
 
@@ -201,9 +212,13 @@ class ReferenceCombiner(object):
                 y[0] = yirr
                 y[2] = ysum
             else:
-                y[0] = yirr
-                y[1] = max((ysum * area[2] - yirr * area[0]) / area[1], 0) if area[1] else 0
-                y[2] = (area[0] * y[0] + area[1] * y[1]) / area[2]
+                if area[1] / area[2] >= 0.02:
+                    y[0] = yirr
+                    y[1] = max((ysum * area[2] - yirr * area[0]) / area[1], 0)
+                    y[2] = (area[0] * y[0] + area[1] * y[1]) / area[2]
+                else: # no rainfed area
+                    y[0] = yirr
+                    y[2] = yirr
         elif not hasirr:
             if area[0] > 0 and area[1] > 0:
                 y = array([ysum, ysum, ysum]) # assume equal irrigated, rainfed yields
@@ -218,6 +233,9 @@ class ReferenceCombiner(object):
                 y = masked_array([0, yirr, yirr], mask = [1, 0, 0])
             else:
                 y = masked_array([yirr, 0, yirr], mask = [0, 1, 0])
+
+        if delta == 0:
+            y = masked_array([y[0], 0, y[0]], mask = [0, 1, 0]) # rainfed is nulled out
 
         return y
 
