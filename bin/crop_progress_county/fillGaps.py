@@ -45,22 +45,26 @@ with nc(inputfile) as f:
 
     tunits = f.variables['time'].units
 
-    planting = f.variables['planting'][:]
-    anthesis = f.variables['anthesis'][:]
-    maturity = f.variables['maturity'][:]
+    cplanting = f.variables['planting'][:]
+    canthesis = f.variables['anthesis'][:]
+    cmaturity = f.variables['maturity'][:]
+
+    splanting = f.variables['planting_state'][:]
+    santhesis = f.variables['anthesis_state'][:]
+    smaturity = f.variables['maturity_state'][:]
 
 with nc(maskfile) as f:
     mlats, mlons = f.variables['lat'][:], f.variables['lon'][:]
     mask = f.variables['mask'][:]
 
 for i in range(len(time)):
-    p = fill(planting[i], lat, lon)
-    a = fill(anthesis[i], lat, lon)
-    m = fill(maturity[i], lat, lon)
+    cplanting[i] = fill(cplanting[i], lat, lon)
+    canthesis[i] = fill(canthesis[i], lat, lon)
+    cmaturity[i] = fill(cmaturity[i], lat, lon)
 
-    planting[i] = p
-    anthesis[i] = a
-    maturity[i] = m
+    splanting[i] = fill(splanting[i], lat, lon)
+    santhesis[i] = fill(santhesis[i], lat, lon)
+    smaturity[i] = fill(smaturity[i], lat, lon)
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', None)
@@ -87,33 +91,32 @@ with nc(outputfile, 'w') as f:
     pervar.units = '%'
     pervar.long_name = 'percentage'
 
-    pvar = f.createVariable('planting', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    pvar[:] = planting
-    pvar.units = 'julian day'
-    pvar.long_name = 'planting'
+    cpvar = f.createVariable('planting', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    cpvar[:] = cplanting
+    cpvar.units = 'julian day'
+    cpvar.long_name = 'planting'
 
-    avar = f.createVariable('anthesis', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    avar[:] = anthesis
-    avar.units = 'julian day'
-    avar.long_name = 'anthesis'
+    cavar = f.createVariable('anthesis', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    cavar[:] = canthesis
+    cavar.units = 'julian day'
+    cavar.long_name = 'anthesis'
 
-    mvar = f.createVariable('maturity', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    mvar[:] = maturity
-    mvar.units = 'julian day'
-    mvar.long_name = 'maturity'
+    cmvar = f.createVariable('maturity', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    cmvar[:] = cmaturity
+    cmvar.units = 'julian day'
+    cmvar.long_name = 'maturity'
 
-    with nc(inputfile) as fi: # copy state data
-        psvar = f.createVariable('planting_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-        psvar[:] = fi.variables['planting_state'][:]
-        psvar.units = 'julian day'
-        psvar.long_name = 'planting'
+    spvar = f.createVariable('planting_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    spvar[:] = splanting
+    spvar.units = 'julian day'
+    spvar.long_name = 'planting'
 
-        asvar = f.createVariable('anthesis_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-        asvar[:] = fi.variables['anthesis_state'][:]
-        asvar.units = 'julian day'
-        asvar.long_name = 'anthesis'
+    savar = f.createVariable('anthesis_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    savar[:] = santhesis
+    savar.units = 'julian day'
+    savar.long_name = 'anthesis'
 
-        msvar = f.createVariable('maturity_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-        msvar[:] = fi.variables['maturity_state'][:]
-        msvar.units = 'julian day'
-        msvar.long_name = 'maturity'
+    smvar = f.createVariable('maturity_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+    smvar[:] = smaturity
+    smvar.units = 'julian day'
+    smvar.long_name = 'maturity'
