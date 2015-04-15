@@ -13,12 +13,15 @@ parser.add_option("-i", "--inputfile", dest = "inputfile", default = "p5.nc4", t
                   help = "Input netcdf4 file", metavar = "FILE")
 parser.add_option("-v", "--variable", dest = "variable", default = "cult_p1", type = "string",
                   help = "Variable name")
+parser.add_option("-m", "--minval", dest = "minval", default = 200, type = "float",
+                  help = "Minimum value from median at which filtering is performed")
 parser.add_option("-o", "--outputfile", dest = "outputfile", default = "p5.filtered.nc4", type = "string",
                   help = "Output netcdf4 file", metavar = "FILE")
 options, args = parser.parse_args()
 
 inputfile  = options.inputfile
 variable   = options.variable
+minval     = options.minval
 outputfile = options.outputfile
 
 with nc(inputfile) as f:
@@ -32,7 +35,7 @@ for i in range(len(latidx)):
     medv = median(v)
     stdv = v.std()
 
-    v[abs(v - medv) > max(1.5 * stdv, 200)] = medv
+    v[abs(v - medv) > max(1.5 * stdv, minval)] = medv
 
     var[:, latidx[i], lonidx[i]] = v
 
