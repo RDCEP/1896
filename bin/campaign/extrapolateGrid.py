@@ -16,6 +16,10 @@ parser.add_option("-m", "--maskfile", dest = "maskfile", default = "mask.all.0.0
                   help = "Mask file", metavar = "FILE")
 parser.add_option("-v", "--variable", dest = "variable", default = "cult_p1", type = "string",
                   help = "Variable name")
+parser.add_option("--wlat", dest = "wlat", default = 1, type = "float",
+                  help = "Weight assigned to latitude in distance metric")
+parser.add_option("--wlon", dest = "wlon", default = 1, type = "float",
+                  help = "Weight assigned to longitude in distance metric")
 parser.add_option("-o", "--outputfile", dest = "outputfile", default = "Campaign.extrap.nc4", type = "string",
                   help = "Output netcdf4 file", metavar = "FILE")
 options, args = parser.parse_args()
@@ -23,6 +27,8 @@ options, args = parser.parse_args()
 inputfile  = options.inputfile
 maskfile   = options.maskfile
 variable   = options.variable
+wlat       = options.wlat
+wlon       = options.wlon
 outputfile = options.outputfile
 
 with nc(inputfile) as f:
@@ -69,7 +75,7 @@ var2 = masked_array(zeros(sh), mask = ones(sh))
 for i in range(len(latidx)):
     l1, l2 = latidx[i], lonidx[i]
 
-    totd = (latd - mlats[l1]) ** 2 + (lond - mlons[l2]) ** 2
+    totd = wlat * (latd - mlats[l1]) ** 2 + wlon * (lond - mlons[l2]) ** 2
     midx = totd.argmin()
 
     if len(sh) == 2:
