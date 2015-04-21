@@ -6,7 +6,7 @@ UTILITIES
 
 Several postprocessing Python utilities are available in the repository. These include the following.
 
-   'bin/campaign/convert2date.py -i <inputfile> -v <variable> -o <outputfile>'
+   bin/campaign/convert2date.py -i \<inputfile\> -v \<variable\> -o \<outputfile\>
 
 This script converts a date variable given by <variable> in <inputfile> from a Julian day representation to a YYYYMMDD representation. The new date variable is stored as an integer in <outputfile>.
 
