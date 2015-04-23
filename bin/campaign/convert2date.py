@@ -26,10 +26,11 @@ outputfile = options.outputfile
 with nc(inputfile) as f:
     lat, lon = f.variables['lat'][:], f.variables['lon'][:]
     time     = f.variables['time'][:].astype(int)
-    tunits   = f.variables['time'].units # growing seasons
+    tunits   = f.variables['time'].units
     var      = f.variables[variable][:]  # var(time, lat, lon)
 
-time  += int(findall(r'\d+', tunits)[0]) - 1
+time += int(findall(r'\d+', tunits)[0])
+if 'growing' in tunits: time -= 1 # time in growing seasons
 dtimes = [datetime(time[t], 1, 1) for t in range(len(time))]
 
 latidx, lonidx = where(~var[0].mask)
