@@ -5,6 +5,7 @@
 from numpy import where
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
+from numpy.ma import isMaskedArray
 
 # parse inputs
 parser = OptionParser()
@@ -41,6 +42,12 @@ for i in range(len(counties2)):
         for k in range(len(irr)):
             A1, Y1 = area1[j, cidx, k], yld1[j, cidx, k]
             A2, Y2 = area2[j, i, k],    yld2[j, i, k]
+
+            if isMaskedArray(A1): A1 = 0
+            if isMaskedArray(A2): A2 = 0
+            if isMaskedArray(Y1): Y1 = 0
+            if isMaskedArray(Y2): Y2 = 0
+
             if A1 + A2:
                 yld[j, cidx, k] = (A1 * Y1 + A2 * Y2) / (A1 + A2)
             else:
