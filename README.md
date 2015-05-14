@@ -28,4 +28,4 @@ This script converts a mask netCDF file \<inputfile\> to its corresponding gridl
 
    bin/campaign/cropprogress2campaign.planting.py -i \<inputfile\> -m \<maskfile\> --wlat \<wlat\> --wlon \<wlon\> -o \<outputfile\>
 
-This script takes the 50th percentile planting date from \<inputfile\>, extrapolates to the mask given in \<maskfile\> using the weights \<wlat\> and \<wlon\>, and converts it to the YYYYMMDD representation.
+This script takes the 50th percentile planting date from \<inputfile\>, extrapolates it to the mask given in \<maskfile\> using the weights \<wlat\> and \<wlon\>, converts it to the YYYYMMDD representation, and saves the result in \<outputfile\>.
