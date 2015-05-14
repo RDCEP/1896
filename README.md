@@ -25,3 +25,7 @@ This script returns the mask union of two mask netCDF files \<inputfile1\> and \
    bin/campaign/nc2gridlist.py -i \<inputfile\> -o \<outputfile\>
 
 This script converts a mask netCDF file \<inputfile\> to its corresponding gridlist \<outputfile\>.
+
+   bin/campaign/cropprogress2campaign.planting.py -i \<inputfile\> -m \<maskfile\> --wlat \<wlat\> --wlon \<wlon\> -o \<outputfile\>
+
+This script takes the 50th percentile planting date from \<inputfile\>, extrapolates to the mask given in \<maskfile\> using the weights \<wlat\> and \<wlon\>, and converts it to the YYYYMMDD representation.
