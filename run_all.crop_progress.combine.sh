@@ -34,5 +34,27 @@ for c in maize soybean sorghum cotton; do
     nccopy -d9 -k4 $finalfile $finalfile.2
     mv $finalfile.2 $finalfile
 
+    # constrain planting date
+    if [ $c = sorghum ]; then
+python << END
+from netCDF4 import Dataset as nc
+from numpy.ma import masked_where
+f = nc('$finalfile', 'a')
+p = f.variables['planting']
+
+pvar = p[:]
+pvar[pvar < 60] = 60
+pvar[pvar > 195] = 195
+p50 = pvar[:, :, :, 2]
+p50[p50 < 75] = 75
+p50[p50 > 180] = 180
+pvar[:, :, :, 2] = p50
+pvar = masked_where(p[:].mask, pvar)
+p[:] = pvar
+
+f.close()
+END
+    fi
+
     rm residuals.nc4 crop_progress1.nc4 crop_progress2.nc4
 done

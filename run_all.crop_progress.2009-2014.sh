@@ -37,6 +37,12 @@ for c in maize soybean sorghum cotton wheat.winter wheat.spring barley; do
             rm $finalfile.tmp
         fi
 
+        # constrain residuals
+        if [ $c = sorghum ]; then
+            ncap2 -O -h -s "where(${v}_dev<-20) ${v}_dev=-20" $finalfileres $finalfileres
+            ncap2 -O -h -s "where(${v}_dev>20) ${v}_dev=20" $finalfileres $finalfileres
+        fi
+
         # mean
         ncwa -h -v ${v}_dev -a time $finalfileres $finalfileres.2
 
