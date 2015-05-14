@@ -32,12 +32,10 @@ class ReferenceCombiner(object):
         self.hvtirr = self.interpolateCounty(self.hvtirr, self.hirr.counties, self.counties)
 
         # conversion factors for yield and area
-        if var == 'maize':
+        if var in ['maize', 'sorghum']:
             self.yldconv = 2.47105 * 56 / 2.20462
-        elif var == 'soybean':
+        elif var in ['soybean', 'wheat.spring', 'wheat.winter']:
             self.yldconv = 2.47105 * 60 / 2.20462
-        elif var == 'sorghum':
-            self.yldconv = 2.47105 * 56 / 2.20462
         elif var in ['cotton-upland', 'cotton-pima']:
             self.yldconv = 2.47105 / 2.20462
         else:
@@ -264,6 +262,10 @@ class ReferenceData(object):
             label = 'COTTON, UPLAND'
         elif var == 'cotton-pima':
             label = 'COTTON, PIMA'
+        elif var == 'wheat.spring':
+            label = 'WHEAT, SPRING'
+        elif var == 'wheat.winter':
+            label = 'WHEAT, WINTER'
         else:
             raise Exception('Unknown crop')
 

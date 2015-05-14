@@ -32,6 +32,12 @@ class CensusData(object):
         elif var == 'cotton-pima':
             sum_area_label = 'COTTON, PIMA - ACRES HARVESTED'
             irr_area_label = 'COTTON, PIMA, IRRIGATED - ACRES HARVESTED'
+        elif var == 'wheat.spring':
+            sum_area_label = 'WHEAT, SPRING, (EXCL DURUM) - ACRES HARVESTED'
+            irr_area_label = 'WHEAT, SPRING, (EXCL DURUM), IRRIGATED - ACRES HARVESTED'
+        elif var == 'wheat.winter':
+            sum_area_label = 'WHEAT, WINTER - ACRES HARVESTED'
+            irr_area_label = 'WHEAT, WINTER, IRRIGATED - ACRES HARVESTED'
         else:
             raise Exception('Unknown crop')
 
