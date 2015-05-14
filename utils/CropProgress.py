@@ -34,6 +34,7 @@ class CropProgressData(object):
 
         header = data[0]
 
+        year_idx  = header.index('Year')
         week_idx  = header.index('Week Ending')
         state_idx = header.index('State ANSI')
         var_idx   = header.index('Data Item')
@@ -55,6 +56,14 @@ class CropProgressData(object):
             planting_label = 'COTTON, UPLAND - PROGRESS, MEASURED IN PCT PLANTED'
             anthesis_label = 'COTTON, UPLAND - PROGRESS, MEASURED IN PCT SETTING BOLLS'
             maturity_label = 'COTTON, UPLAND - PROGRESS, MEASURED IN PCT BOLLS OPENING'
+        elif var == 'wheat.spring':
+            planting_label = 'WHEAT, SPRING, (EXCL DURUM) - PROGRESS, MEASURED IN PCT PLANTED'
+            anthesis_label = 'WHEAT, SPRING, (EXCL DURUM) - PROGRESS, MEASURED IN PCT HEADED'
+            maturity_label = 'WHEAT, SPRING, (EXCL DURUM) - PROGRESS, MEASURED IN PCT HARVESTED'
+        elif var == 'wheat.winter':
+            planting_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT PLANTED'
+            anthesis_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT HEADED'
+            maturity_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT HARVESTED'
         else:
             raise Exception('Unknown crop')
 
@@ -68,7 +77,9 @@ class CropProgressData(object):
         for i in range(nd):
             line = data[i + 1]
 
-            year, month, day = [int(j) for j in line[week_idx].split('-')]
+            year = int(line[year_idx])
+
+            _, month, day = [int(j) for j in line[week_idx].split('-')]
             jday = int(datetime(year, month, day).strftime('%j')) - 3
 
             self.state[i] = int(line[state_idx])
@@ -86,12 +97,21 @@ class CropProgressData(object):
             if var == 'cotton' and self.var[i] == 'maturity':
                 # cotton's maturity is a week after bolls opening
                 jday += 7
+            if var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'maturity':
+                # wheat matures sidx days before harvest on average
+                jday -= 6
 
             if jday < 1:
                 year -= 1
                 jday = 365 + isleap(year) - jday
             elif jday > 365 + isleap(year):
                 jday -= 365 + isleap(year)
+
+            if var == 'wheat.winter' and self.var[i] in ['anthesis', 'maturity']:
+                # winter wheat's anthesis and maturity occur in the next calendar year but
+                # assign them to previous year's growing season
+                year -= 1
+
             self.year[i] = year
             self.day[i]  = jday
 

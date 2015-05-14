@@ -121,6 +121,7 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
         self.county = union1d(self.cp1.county, self.cp2.county)
         self.state  = union1d(self.cp1.state, self.cp1.state)
         self.per    = self.cp1.per
+        self.crop   = crop
 
     def getCountyVar(self, var):
         nyears, ncounties, nper = len(self.year), len(self.county), len(self.per)
@@ -131,17 +132,22 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
         v2 = self.cp2.getCountyVar(var)
 
         # harmonize along county
-        var = masked_array(zeros((nyears, ncounties, nper)), mask = ones((nyears, ncounties, nper)))
+        varr = masked_array(zeros((nyears, ncounties, nper)), mask = ones((nyears, ncounties, nper)))
         for i in range(ncounties):
             c = self.county[i]
             if c in self.cp1.county:
                 idx = where(self.cp1.county == c)[0][0]
-                var[: nyears1, i] = v1[:, idx]
+                varr[: nyears1, i] = v1[:, idx]
             if c in self.cp2.county:
                 idx = where(self.cp2.county == c)[0][0]
-                var[nyears1 :, i] = v2[:, idx]
+                varr[nyears1 :, i] = v2[:, idx]
 
-        return var
+        if self.crop == 'wheat.winter' and var in ['anthesis', 'maturity']:
+            # start anthesis and maturity at second year and mask out last year
+            varr[: -1] = varr[1 :]
+            varr[-1].mask = True
+
+        return varr
 
     def getStateVar(self, var):
         nyears1 = len(self.cp1.year)
@@ -151,12 +157,17 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
 
         sh = array(v1.shape)
         sh[0] = len(self.year)
-        var = masked_array(zeros(sh), mask = ones(sh))
+        varr = masked_array(zeros(sh), mask = ones(sh))
 
-        var[: nyears1] = v1
-        var[nyears1 :] = v2
+        varr[: nyears1] = v1
+        varr[nyears1 :] = v2
 
-        return var
+        if self.crop == 'wheat.winter' and var in ['anthesis', 'maturity']:
+            # start anthesis and maturity at second year and mask out last year
+            varr[: -1] = varr[1 :]
+            varr[-1].mask = True
+
+        return varr
 
 class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
     vars = ['planting', 'anthesis', 'maturity']

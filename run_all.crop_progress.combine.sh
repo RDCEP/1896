@@ -2,13 +2,18 @@
 
 PATH=$PATH:utils
 
-for c in maize soybean sorghum cotton; do
+for c in maize soybean sorghum cotton wheat.spring wheat.winter; do
     echo Running $c . . .
+    if [ $c = wheat.spring ] || [ $c = wheat.winter ]; then
+       crop=wheat
+    else
+       crop=$c
+    fi
 
-    file1=data/$c/final/$c.crop_progress.nc4 # 1980-2012
-    file2=data/$c/final/$c.crop_progress.2009-2014.nc4 # 2009-2014
-    resfile=data/$c/final/$c.crop_progress.2009-2014.residuals.nc4
-    finalfile=data/$c/final/$c.crop_progress.1980-2014.nc4
+    file1=data/$crop/final/$c.crop_progress.nc4 # 1980-2012
+    file2=data/$crop/final/$c.crop_progress.2009-2014.nc4 # 2009-2014
+    resfile=data/$crop/final/$c.crop_progress.2009-2014.residuals.nc4
+    finalfile=data/$crop/final/$c.crop_progress.1980-2014.nc4
 
     cp $file1 crop_progress1.nc4
     cp $file2 crop_progress2.nc4
@@ -58,3 +63,9 @@ END
 
     rm residuals.nc4 crop_progress1.nc4 crop_progress2.nc4
 done
+
+# combine wheat
+bin/crop_progress/combineWheat.py -s data/wheat/final/wheat.spring.crop_progress.1980-2014.nc4 \
+                                  -w data/wheat/final/wheat.winter.crop_progress.1980-2014.nc4 \
+                                  -m data/wheat/final/wheat.variety.mask.nc4                   \
+                                  -o data/wheat/final/wheat.crop_progress.1980-2014.nc4

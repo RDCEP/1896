@@ -14,6 +14,9 @@ def fill(var, lat, lon):
     glatidx, glonidx = where(~badgrid)
     glat,    glon    = lat[glatidx], lon[glonidx]
 
+    if not glat.size: # no good points
+        return var2
+
     badgrid[mask.mask] = False
     latidx, lonidx = where(badgrid)
 
