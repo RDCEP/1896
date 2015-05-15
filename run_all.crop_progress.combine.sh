@@ -61,6 +61,27 @@ f.close()
 END
     fi
 
+    if [ $c = wheat.winter ]; then
+python << END
+from netCDF4 import Dataset as nc
+from numpy.ma import masked_where
+f = nc('$finalfile', 'a')
+p = f.variables['planting']
+
+maxp = [315, 320, 330, 340, 345]
+
+pvar = p[:]
+for i in range(len(maxp)):
+    pp = p[:, :, :, i]
+    pp[pp > maxp[i]] = maxp[i]
+    pvar[:, :, :, i] = pp
+pvar = masked_where(p[:].mask, pvar)
+p[:] = pvar
+
+f.close()
+END
+    fi
+
     rm residuals.nc4 crop_progress1.nc4 crop_progress2.nc4
 done
 
