@@ -18,6 +18,18 @@ for c in maize soybean sorghum cotton-upland cotton-pima; do
                                  -o data/$crop/final/$c.reference.county.nc4
 done
 
+# handle special case of wheat separately
+crop=wheat
+for c in wheat.spring wheat.winter; do
+   echo Running county-level $c . . .
+   bin/reference/reference2nc.py -y data/$crop/reference/$c.yield.csv,data/$crop/reference/$c.yield_irr.csv                   \
+                                 -a data/$crop/reference/$c.harvested_area.csv,data/$crop/reference/$c.harvested_area_irr.csv \
+                                 -s data/$crop/reference/$c.census_areas.csv                                                  \
+                                 -t 1980,2012                                                                                 \
+                                 -n $c                                                                                        \
+                                 -o data/$crop/final/$c.reference.county.nc4
+done
+
 # combine cotton files
 echo Combining cotton crops . . .
 bin/reference/combineCotton.py -c data/cotton/final/cotton-upland.reference.county.nc4 \
@@ -33,4 +45,30 @@ for c in maize soybean sorghum cotton; do
                                        -f data/common/USA_adm_all_fips.nc4       \
                                        -m data/$c/aux/$c.mask.0.01.nc4           \
                                        -o data/$c/final/$c.reference.nc4
+   bin/reference/fillGaps.py -i data/$c/final/$c.reference.nc4   \
+                             -m data/$c/aux/$c.mask.0.01.nc4     \
+                             -o data/$c/final/$c.reference.nc4.2
+   mv data/$c/final/$c.reference.nc4.2 data/$c/final/$c.reference.nc4
 done
+
+# handle special case of wheat separately
+crop=wheat
+for c in wheat.spring wheat.winter; do
+   echo Running grid-level $c . . .
+   bin/reference/downscaleWithMIRCA.py -i data/$crop/final/$c.reference.county.nc4  \
+                                       -a data/$crop/aux/$crop.NA.nc4               \
+                                       -c data/$crop/aux/$crop.county.nc4           \
+                                       -f data/common/USA_adm_all_fips.nc4          \
+                                       -m data/$crop/aux/$crop.mask.0.01.nc4        \
+                                       -o data/$crop/final/$c.reference.2.nc4
+   bin/reference/fillGaps.py -i data/$crop/final/$c.reference.nc4   \
+                             -m data/$crop/aux/$crop.mask.0.01.nc4  \
+                             -o data/$crop/final/$c.reference.nc4.2
+   mv data/$crop/final/$c.reference.nc4.2 data/$crop/final/$c.reference.nc4
+done
+
+# combine wheat
+bin/reference/combineWheat.py -s data/wheat/final/wheat.spring.reference.nc4 \
+                              -w data/wheat/final/wheat.winter.reference.nc4 \
+                              -o data/wheat/final/wheat.reference.nc4        \
+                              -m data/wheat/final/wheat.variety.mask.nc4

@@ -81,8 +81,8 @@ with nc(outputfile, 'w') as f:
     f.createDimension('irr', len(irr))
     irrvar = f.createVariable('irr', 'i4', 'irr')
     irrvar[:] = irr
-    irrvar.units = 'ir, rf, sum'
-    irrvar.long_name = 'mapping'
+    irrvar.units = 'mapping'
+    irrvar.long_name = 'ir, rf, sum'
 
     yldvar = f.createVariable('yield', 'f4', ('time', 'lat', 'lon', 'irr'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
     yldvar[:] = yldf
