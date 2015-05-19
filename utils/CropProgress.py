@@ -97,9 +97,12 @@ class CropProgressData(object):
             if var == 'cotton' and self.var[i] == 'maturity':
                 # cotton's maturity is a week after bolls opening
                 jday += 7
+            if var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'anthesis':
+                # wheat anthesis four days after heading on average
+                jday += 4
             if var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'maturity':
-                # wheat matures sidx days before harvest on average
-                jday -= 6
+                # wheat matures ten days before harvest on average
+                jday -= 10
 
             if jday < 1:
                 year -= 1

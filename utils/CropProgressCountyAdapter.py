@@ -96,10 +96,14 @@ class CropProgressCountyAdapterBase(object):
             for j in range(nregions):
                 varr[i, j] = self.__interpolate(self.per, data[i, :, j, varidx], self.day[i])
 
-        if crop in ['wheat.winter', 'wheat.spring', 'barley'] and var == 'maturity':
-            varr -= 7 # week before harvest
+        if crop in ['wheat.winter', 'wheat.spring'] and var == 'anthesis':
+            varr += 4
+        elif crop in ['wheat.winter', 'wheat.spring'] and var == 'maturity':
+            varr -= 10
+        elif crop == 'barley' and var == 'maturity':
+            varr -= 7
         elif crop == 'cotton' and var == 'maturity':
-            varr += 7 # week after bolls opening
+            varr += 7
 
         return varr
 
