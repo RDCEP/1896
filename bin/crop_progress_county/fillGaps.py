@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # import modules
-from numpy import where
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
+from numpy import where, setdiff1d
 
 def fill(var, lat, lon):
     var2 = var.copy()
@@ -48,26 +48,25 @@ with nc(inputfile) as f:
 
     tunits = f.variables['time'].units
 
-    cplanting = f.variables['planting'][:]
-    canthesis = f.variables['anthesis'][:]
-    cmaturity = f.variables['maturity'][:]
+    vars = setdiff1d(f.variables.keys(), ['time', 'lat', 'lon', 'per'])
 
-    splanting = f.variables['planting_state'][:]
-    santhesis = f.variables['anthesis_state'][:]
-    smaturity = f.variables['maturity_state'][:]
+    varr       = [0] * len(vars)
+    vunits     = [0] * len(vars)
+    vlongnames = [0] * len(vars)
+    for i in range(len(vars)):
+        varr[i]       = f.variables[vars[i]][:]
+        vunits[i]     = f.variables[vars[i]].units
+        vlongnames[i] = f.variables[vars[i]].long_name
 
 with nc(maskfile) as f:
     mlats, mlons = f.variables['lat'][:], f.variables['lon'][:]
     mask = f.variables['mask'][:]
 
-for i in range(len(time)):
-    cplanting[i] = fill(cplanting[i], lat, lon)
-    canthesis[i] = fill(canthesis[i], lat, lon)
-    cmaturity[i] = fill(cmaturity[i], lat, lon)
-
-    splanting[i] = fill(splanting[i], lat, lon)
-    santhesis[i] = fill(santhesis[i], lat, lon)
-    smaturity[i] = fill(smaturity[i], lat, lon)
+for i in range(len(vars)):
+    v = varr[i]
+    for j in range(len(time)):
+        v[j] = fill(v[j], lat, lon)
+    varr[i] = v
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', None)
@@ -94,32 +93,8 @@ with nc(outputfile, 'w') as f:
     pervar.units = '%'
     pervar.long_name = 'percentage'
 
-    cpvar = f.createVariable('planting', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    cpvar[:] = cplanting
-    cpvar.units = 'julian day'
-    cpvar.long_name = 'planting'
-
-    cavar = f.createVariable('anthesis', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    cavar[:] = canthesis
-    cavar.units = 'julian day'
-    cavar.long_name = 'anthesis'
-
-    cmvar = f.createVariable('maturity', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    cmvar[:] = cmaturity
-    cmvar.units = 'julian day'
-    cmvar.long_name = 'maturity'
-
-    spvar = f.createVariable('planting_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    spvar[:] = splanting
-    spvar.units = 'julian day'
-    spvar.long_name = 'planting'
-
-    savar = f.createVariable('anthesis_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    savar[:] = santhesis
-    savar.units = 'julian day'
-    savar.long_name = 'anthesis'
-
-    smvar = f.createVariable('maturity_state', 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    smvar[:] = smaturity
-    smvar.units = 'julian day'
-    smvar.long_name = 'maturity'
+    for i in range(len(vars)):
+        vvar = f.createVariable(vars[i], 'f4', ('time', 'lat', 'lon', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+        vvar[:] = varr[i]
+        vvar.units = vunits[i]
+        vvar.long_name = vlongnames[i]

@@ -170,23 +170,23 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
         return varr
 
 class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
-    vars = ['planting', 'anthesis', 'maturity']
+    vars = ['planting', 'anthesis', 'maturity', 'emergence']
 
-    varmap_num = {'maize':        [105, 106, 109], \
-                  'soybean':      [135, 136, 138], \
-                  'sorghum':      [195, 196, 198], \
-                  'cotton':       [165, 167, 168], \
-                  'wheat.winter': [255, 257, 258], \
-                  'wheat.spring': [285, 287, 288], \
-                  'barley':       [335, 337, 338]}
+    varmap_num = {'maize':        [105, 106, 109, 111], \
+                  'soybean':      [135, 136, 138, ''],  \
+                  'sorghum':      [195, 196, 198, ''],  \
+                  'cotton':       [165, 167, 168, ''],  \
+                  'wheat.winter': [255, 257, 258, ''],  \
+                  'wheat.spring': [285, 287, 288, ''],  \
+                  'barley':       [335, 337, 338, '']}
 
-    varmap_str = {'maize':        ['CCRNPLPG', 'CCRNSIPG', 'CCRNMAPG'], \
-                  'soybean':      ['CSOYPLPG', 'CSOYBLPG', 'CSOYDLPG'], \
-                  'sorghum':      ['CSRGPLPG', 'CSRGHEPG', 'CSRGMAPG'], \
-                  'cotton':       ['CCTUPLPG', 'CCTUSBPG', 'CCTUBOPG'], \
-                  'wheat.winter': ['CWWHPLPG', 'CWWHHEPG', 'CWWHHVPG'], \
-                  'wheat.spring': ['CSWHPLPG', 'CSWHHEPG', 'CSWHHVPG'], \
-                  'barley':       ['CBARPLPG', 'CBARHEPG', 'CBARHVPG']}
+    varmap_str = {'maize':        ['CCRNPLPG', 'CCRNSIPG', 'CCRNMAPG', 'CCRNEMPG'], \
+                  'soybean':      ['CSOYPLPG', 'CSOYBLPG', 'CSOYDLPG', ''],         \
+                  'sorghum':      ['CSRGPLPG', 'CSRGHEPG', 'CSRGMAPG', ''],         \
+                  'cotton':       ['CCTUPLPG', 'CCTUSBPG', 'CCTUBOPG', ''],         \
+                  'wheat.winter': ['CWWHPLPG', 'CWWHHEPG', 'CWWHHVPG', ''],         \
+                  'wheat.spring': ['CSWHPLPG', 'CSWHHEPG', 'CSWHHVPG', ''],         \
+                  'barley':       ['CBARPLPG', 'CBARHEPG', 'CBARHVPG', '']}
 
     per = array([10, 25, 50, 75, 90]) # percentiles
 
@@ -210,8 +210,11 @@ class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
 
         nyears, nweeks, ncounties, nvars = len(self.year), len(self.week), len(self.county), len(self.vars)
 
-        self.data  = masked_array(zeros((nyears, nweeks, ncounties, nvars)), mask = ones((nyears, nweeks, ncounties, nvars)))
+        self.data = masked_array(zeros((nyears, nweeks, ncounties, nvars)), mask = ones((nyears, nweeks, ncounties, nvars)))
         for i in range(nvars):
+            if self.varmap[i] == '': # no data
+                continue
+
             varidx = where(self.var == self.varmap[i])[0][0]
             self.data[:, :, :, i] = self.rawdata[:, :, varidx, :]
 
