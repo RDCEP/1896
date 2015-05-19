@@ -8,7 +8,7 @@ for p in os.environ['PATH'].split(':'): sys.path.append(p)
 # import modules
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
-from CropProgressCountyAdapter import CropProgressCountyAdapter
+from CropProgressCountyAdapter import CropProgressCountyAdapterComposite
 
 # parse inputs
 parser = OptionParser()
@@ -16,23 +16,31 @@ parser.add_option("--inputfile1", dest = "inputfile1", default = "out_2009-2013.
                   help = "Input netcdf file for 2009-2013", metavar = "FILE")
 parser.add_option("--inputfile2", dest = "inputfile2", default = "out_2014.final.nc4", type = "string",
                   help = "Input netcdf file for 2014", metavar = "FILE")
+parser.add_option("-c", "--cmapfile", dest = "cmapfile", default = "USA_adm_all_fips.nc4", type = "string",
+                  help = "County mapping file", metavar = "FILE")
+parser.add_option("-a", "--careafile", dest = "careafile", default = "maize.county.nc4", type = "string",
+                  help = "County-level area file", metavar = "FILE")
 parser.add_option("-n", "--cropname", dest = "cropname", default = "maize", type = "string",
                   help = "Crop name")
+parser.add_option("-v", "--variables", dest = "variables", default = "planting,anthesis,maturity", type = "string",
+                  help = "Comma-separated list of variables to process")
 parser.add_option("-o", "--outputfile", dest = "outputfile", default = "maize.crop_progress.2009-2014.nc4", type = "string",
                   help = "Output netcdf4 file", metavar = "FILE")
 options, args = parser.parse_args()
 
 inputfile1 = options.inputfile1
 inputfile2 = options.inputfile2
+cmapfile   = options.cmapfile
+careafile  = options.careafile
 cropname   = options.cropname
+variables  = options.variables
 outputfile = options.outputfile
 
+variables = variables.split(',')
+
 # load crop progress data
-cp = CropProgressCountyAdapter(inputfile1, inputfile2, cropname)
+cp = CropProgressCountyAdapterComposite(inputfile1, inputfile2, cmapfile, careafile, cropname)
 years, counties, per = cp.year, cp.county, cp.per
-planting = cp.getVar('planting')
-anthesis = cp.getVar('anthesis')
-maturity = cp.getVar('maturity')
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', None)
@@ -53,17 +61,8 @@ with nc(outputfile, 'w') as f:
     pervar.units = '%'
     pervar.long_name = 'percentage'
 
-    pvar = f.createVariable('planting', 'f4', ('time', 'county', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    pvar[:] = planting
-    pvar.units = 'julian day'
-    pvar.long_name = 'planting'
-
-    avar = f.createVariable('anthesis', 'f4', ('time', 'county', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    avar[:] = anthesis
-    avar.units = 'julian day'
-    avar.long_name = 'anthesis'
-
-    mvar = f.createVariable('maturity', 'f4', ('time', 'county', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
-    mvar[:] = maturity
-    mvar.units = 'julian day'
-    mvar.long_name = 'maturity'
+    for i in range(len(variables)):
+        vvar = f.createVariable(variables[i], 'f4', ('time', 'county', 'per'), zlib = True, shuffle = False, complevel = 9, fill_value = 1e20)
+        vvar[:] = cp.getCountyVar(variables[i])
+        vvar.units = 'julian day'
+        vvar.long_name = variables[i]
