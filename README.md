@@ -14,6 +14,10 @@ This script converts a date variable given by \<variable\> in \<inputfile\> from
 
 This script extrapolates \<variable\> from \<inputfile\> to all points in \<maskfile\> and saves the result to \<outputfile\>. The distance measure used for extrapolation is a weighted Euclidean distance in latitude-longitude space, where \<wlat\> and \<wlon\> are the latitude and longitude weights, respectively. Both weights default to one.
 
+   bin/campaign/extrapolateGridAll.py -i \<inputfile\> -m \<maskfile\> --wlat \<wlat\> --wlon \<wlon\> -o \<outputfile\>
+
+Similar to extrapolateGrid.py, this script extrapolates all spatial non-dimension variables from \<inputfile\> to all points in \<maskfile\> and saves the result to \<outputfile\>. The distance measure used for extrapolation is a weighted Euclidean distance in latitude-longitude space, where \<wlat\> and \<wlon\> are the latitude and longitude weights, respectively. Both weights default to one.
+
    bin/campaign/filterGrid.py -i \<inputfile\> -v \<variable\> -m \<minval\> -o \<outputfile\>
 
 This script sets \<variable\> to its median value for points whose deviation from the median is greater than 1.5 times the standard deviation or \<minval\>, whichever is greater. The result is saved into \<outputfile\>.
