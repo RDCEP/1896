@@ -6,7 +6,7 @@ indir=/project/joshuaelliott/1896/data
 
 aggfile=$indir/common/USA_CAN_adm_all_fips.nc4
 
-for c in maize soybean sorghum cotton; do
+for c in maize soybean sorghum cotton wheat; do
    echo Running $c . . .
 
    # aggregate crop progress
