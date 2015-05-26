@@ -100,7 +100,7 @@ class CropProgressCountyAdapterBase(object):
             varr += 4
         elif crop in ['wheat.winter', 'wheat.spring'] and var == 'maturity':
             varr -= 10
-        elif crop == 'barley' and var == 'maturity':
+        elif crop in ['barley', 'rapeseed'] and var == 'maturity':
             varr -= 7
         elif crop == 'cotton' and var == 'maturity':
             varr += 7
@@ -182,7 +182,8 @@ class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
                   'cotton':       [165, 167, 168, ''],  \
                   'wheat.winter': [255, 257, 258, ''],  \
                   'wheat.spring': [285, 287, 288, ''],  \
-                  'barley':       [335, 337, 338, '']}
+                  'barley':       [[335, 505, 606, 700, 460, 345], [337, 507, 610, 708, 462, 349], [338, 509, 612, 701, 463, 352], ''], \
+                  'rapeseed':     [[166, 460, 826, 855], [462, 828, 858], [861, 464, 830], '']}
 
     varmap_str = {'maize':        ['CCRNPLPG', 'CCRNSIPG', 'CCRNMAPG', 'CCRNEMPG'], \
                   'soybean':      ['CSOYPLPG', 'CSOYBLPG', 'CSOYDLPG', ''],         \
@@ -190,7 +191,8 @@ class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
                   'cotton':       ['CCTUPLPG', 'CCTUSBPG', 'CCTUBOPG', ''],         \
                   'wheat.winter': ['CWWHPLPG', 'CWWHHEPG', 'CWWHHVPG', ''],         \
                   'wheat.spring': ['CSWHPLPG', 'CSWHHEPG', 'CSWHHVPG', ''],         \
-                  'barley':       ['CBARPLPG', 'CBARHEPG', 'CBARHVPG', '']}
+                  'barley':       ['CBARPLPG', 'CBARHEPG', 'CBARHVPG', ''],         \
+                  'rapeseed':     ['CCANPLPG', 'CCANBLPG', 'CCANHVPG', '']}
 
     per = array([10, 25, 50, 75, 90]) # percentiles
 
@@ -216,11 +218,23 @@ class CropProgressCountyAdapter(CropProgressCountyAdapterBase):
 
         self.data = masked_array(zeros((nyears, nweeks, ncounties, nvars)), mask = ones((nyears, nweeks, ncounties, nvars)))
         for i in range(nvars):
-            if self.varmap[i] == '': # no data
-                continue
+            vmap = self.varmap[i]
 
-            varidx = where(self.var == self.varmap[i])[0][0]
-            self.data[:, :, :, i] = self.rawdata[:, :, varidx, :]
+            if isinstance(vmap, list):
+                for j in range(ncounties):
+                    for k in range(len(vmap)):
+                        if vmap[k] in self.var: # variable in list
+                            varidx = where(self.var == vmap[k])[0][0]
+                            data   = self.rawdata[:, :, varidx, j]
+                            if not isMaskedArray(data) or not data.mask.all():
+                                self.data[:, :, j, i] = data
+                                break
+            elif vmap != '':
+                if vmap in self.var:
+                    varidx = where(self.var == vmap)[0][0]
+                    self.data[:, :, :, i] = self.rawdata[:, :, varidx, :]
+            else: # no data
+                continue
 
             # discard counties with insufficient data
             for j in range(ncounties):

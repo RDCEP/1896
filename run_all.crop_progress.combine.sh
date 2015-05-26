@@ -2,7 +2,7 @@
 
 PATH=$PATH:utils
 
-for c in maize soybean sorghum cotton wheat.spring wheat.winter; do
+for c in maize soybean sorghum cotton wheat.spring wheat.winter barley; do
     echo Running $c . . .
     if [ $c = wheat.spring ] || [ $c = wheat.winter ]; then
        crop=wheat
@@ -90,3 +90,26 @@ bin/crop_progress/combineWheat.py -s data/wheat/final/wheat.spring.crop_progress
                                   -w data/wheat/final/wheat.winter.crop_progress.1980-2014.nc4 \
                                   -m data/wheat/final/wheat.variety.mask.nc4                   \
                                   -o data/wheat/final/wheat.crop_progress.1980-2014.nc4
+
+# process rapeseed
+file1=data/rapeseed/final/rapeseed.crop_progress.2009-2014.nc4
+finalfile=data/rapeseed/final/rapeseed.crop_progress.1980-2014.nc4
+ncwa -h -a time $file1 tmp.nc4
+ncecat -O -h -u time tmp.nc4 tmp.nc4
+ncatted -O -h -a units,time,m,c,"years since 1980" tmp.nc4 tmp.nc4
+ncap2 -O -h -s "time=time-2" tmp.nc4 tmp.nc4
+cp tmp.nc4 $finalfile
+for i in {1..28}; do
+    ncap2 -h -s "time=time+$i" tmp.nc4 tmp2.nc4
+    ncrcat -O -h $finalfile tmp2.nc4 $finalfile
+    rm tmp2.nc4
+done
+rm tmp.nc4
+ncks -O -h -x -v planting_state,anthesis_state,maturity_state $finalfile $finalfile
+ncks -h -x -v planting_state,anthesis_state,maturity_state $file1 tmp.nc4
+ncatted -O -h -a units,time,m,c,"years since 1980" tmp.nc4 tmp.nc4
+ncap2 -O -h -s "time=time+29" tmp.nc4 tmp.nc4
+ncrcat -O -h $finalfile tmp.nc4 $finalfile
+nccopy -d9 -k4 $finalfile $finalfile.2
+mv $finalfile.2 $finalfile
+rm tmp.nc4

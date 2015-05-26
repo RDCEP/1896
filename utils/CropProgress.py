@@ -64,6 +64,10 @@ class CropProgressData(object):
             planting_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT PLANTED'
             anthesis_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT HEADED'
             maturity_label = 'WHEAT, WINTER - PROGRESS, MEASURED IN PCT HARVESTED'
+        elif var == 'barley':
+            planting_label = 'BARLEY - PROGRESS, MEASURED IN PCT PLANTED'
+            anthesis_label = 'BARLEY - PROGRESS, MEASURED IN PCT HEADED'
+            maturity_label = 'BARLEY - PROGRESS, MEASURED IN PCT HARVESTED'
         else:
             raise Exception('Unknown crop')
 
@@ -95,12 +99,15 @@ class CropProgressData(object):
                 self.var[i] = 'other'
 
             if var == 'cotton' and self.var[i] == 'maturity':
-                # cotton's maturity is a week after bolls opening
+                # cotton matures a week after bolls opening on average
                 jday += 7
-            if var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'anthesis':
+            elif var == 'barley' and self.var[i] == 'maturity':
+                # barley matures a week before harvest on average
+                jday -= 7
+            elif var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'anthesis':
                 # wheat anthesis four days after heading on average
                 jday += 4
-            if var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'maturity':
+            elif var in ['wheat.spring', 'wheat.winter'] and self.var[i] == 'maturity':
                 # wheat matures ten days before harvest on average
                 jday -= 10
 

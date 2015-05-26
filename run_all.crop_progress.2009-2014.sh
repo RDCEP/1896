@@ -2,7 +2,7 @@
 
 PATH=$PATH:utils
 
-for c in maize soybean sorghum cotton wheat.winter wheat.spring barley; do
+for c in maize soybean sorghum cotton wheat.winter wheat.spring barley rapeseed; do
     echo Running $c
     if [ $c = wheat.winter ] || [ $c = wheat.spring ]; then
         crop=wheat
