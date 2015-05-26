@@ -1,4 +1,5 @@
 from csv import reader
+from os.path import isfile
 from Census import CensusData
 from numpy.ma import masked_array, isMaskedArray
 from numpy import double, zeros, ones, unique, array, union1d, intersect1d, where, interp, logical_and, arange, sqrt
@@ -36,7 +37,9 @@ class ReferenceCombiner(object):
             self.yldconv = 2.47105 * 56 / 2.20462
         elif var in ['soybean', 'wheat.spring', 'wheat.winter']:
             self.yldconv = 2.47105 * 60 / 2.20462
-        elif var in ['cotton-upland', 'cotton-pima']:
+        elif var == 'barley':
+            self.yldconv = 2.47105 * 48 / 2.20462
+        elif var in ['cotton-upland', 'cotton-pima', 'rapeseed']:
             self.yldconv = 2.47105 / 2.20462
         else:
             raise Exception('Unknown crop')
@@ -239,6 +242,14 @@ class ReferenceCombiner(object):
 
 class ReferenceData(object):
     def __init__(self, csvfile, var):
+        if not isfile(csvfile):
+            self.usc      = array([30035]) # random county in montana
+            self.year     = array([2000])
+            self.value    = masked_array(zeros(1), mask = ones(1)) # no data
+            self.years    = unique(self.year)
+            self.counties = unique(self.usc)
+            return
+
         data = []
         with open(csvfile, 'rU') as f:
             for row in reader(f):
@@ -266,6 +277,10 @@ class ReferenceData(object):
             label = 'WHEAT, SPRING'
         elif var == 'wheat.winter':
             label = 'WHEAT, WINTER'
+        elif var == 'barley':
+            label = 'BARLEY'
+        elif var == 'rapeseed':
+            label = 'CANOLA'
         else:
             raise Exception('Unknown crop')
 
