@@ -60,7 +60,7 @@ for c in wheat.spring wheat.winter; do
                                        -c data/$crop/aux/$crop.county.nc4           \
                                        -f data/common/USA_adm_all_fips.nc4          \
                                        -m data/$crop/aux/$crop.mask.0.01.nc4        \
-                                       -o data/$crop/final/$c.reference.2.nc4
+                                       -o data/$crop/final/$c.reference.nc4
    bin/reference/fillGaps.py -i data/$crop/final/$c.reference.nc4   \
                              -m data/$crop/aux/$crop.mask.0.01.nc4  \
                              -o data/$crop/final/$c.reference.nc4.2

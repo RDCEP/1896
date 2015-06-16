@@ -117,9 +117,8 @@ class CropProgressData(object):
             elif jday > 365 + isleap(year):
                 jday -= 365 + isleap(year)
 
-            if var == 'wheat.winter' and self.var[i] in ['anthesis', 'maturity']:
-                # winter wheat's anthesis and maturity occur in the next calendar year but
-                # assign them to previous year's growing season
+            if var == 'wheat.winter':
+                # assign all winter wheat variables to previous calendar year
                 year -= 1
 
             self.year[i] = year

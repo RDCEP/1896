@@ -328,6 +328,10 @@ class ReferenceData(object):
 
         self.usc = self.state * 1000 + self.county # unique state-county
 
+        if var == 'wheat.winter':
+            # assign all winter wheat variables to previous calendar year
+            self.year -= 1
+
         self.years    = unique(self.year)
         self.counties = unique(self.usc)
 

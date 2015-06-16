@@ -1,7 +1,7 @@
 import abc
 from netCDF4 import Dataset as nc
 from numpy.ma import masked_array, isMaskedArray, masked_where
-from numpy import array, zeros, ones, where, interp, append, union1d, unique
+from numpy import array, zeros, ones, where, interp, append, union1d, unique, diff
 
 class StateAggregator(object):
     def __init__(self, smapfile, areafile):
@@ -114,6 +114,10 @@ class CropProgressCountyAdapterBase(object):
             else:
                 y = y[~x.mask]
                 x = x[~x.mask]
+        dx = where(diff(x) < -10)[0]
+        if dx.size:
+            x = x[: dx[0] + 1]
+            y = y[: dx[0] + 1]
         return interp(xi, x, y)
 
 class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
@@ -125,18 +129,22 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
         self.county = union1d(self.cp1.county, self.cp2.county)
         self.state  = union1d(self.cp1.state, self.cp1.state)
         self.per    = self.cp1.per
-        self.crop   = crop
+
+        if crop == 'wheat.winter':
+            self.year = append(self.year - 1, self.year[-1])
+
+        self.crop = crop
 
     def getCountyVar(self, var):
         nyears, ncounties, nper = len(self.year), len(self.county), len(self.per)
 
-        nyears1 = len(self.cp1.year)
+        nyears1, nyears2 = len(self.cp1.year), len(self.cp2.year)
 
         v1 = self.cp1.getCountyVar(var)
         v2 = self.cp2.getCountyVar(var)
 
         # harmonize along county
-        varr = masked_array(zeros((nyears, ncounties, nper)), mask = ones((nyears, ncounties, nper)))
+        varr = masked_array(zeros((nyears1 + nyears2, ncounties, nper)), mask = ones((nyears1 + nyears2, ncounties, nper)))
         for i in range(ncounties):
             c = self.county[i]
             if c in self.cp1.county:
@@ -146,30 +154,31 @@ class CropProgressCountyAdapterComposite(CropProgressCountyAdapterBase):
                 idx = where(self.cp2.county == c)[0][0]
                 varr[nyears1 :, i] = v2[:, idx]
 
-        if self.crop == 'wheat.winter' and var in ['anthesis', 'maturity']:
-            # start anthesis and maturity at second year and mask out last year
-            varr[: -1] = varr[1 :]
-            varr[-1].mask = True
+        if self.crop == 'wheat.winter':
+            newvarr = masked_array(zeros((nyears, ncounties, nper)), mask = ones((nyears, ncounties, nper)))
+            newvarr[: nyears1 + nyears2] = varr
+            varr = newvarr
 
         return varr
 
     def getStateVar(self, var):
-        nyears1 = len(self.cp1.year)
+        nyears1, nyears2 = len(self.cp1.year), len(self.cp2.year)
 
         v1 = self.cp1.getStateVar(var)
         v2 = self.cp2.getStateVar(var)
 
         sh = array(v1.shape)
-        sh[0] = len(self.year)
+        sh[0] = nyears1 + nyears2
         varr = masked_array(zeros(sh), mask = ones(sh))
 
         varr[: nyears1] = v1
         varr[nyears1 :] = v2
 
-        if self.crop == 'wheat.winter' and var in ['anthesis', 'maturity']:
-            # start anthesis and maturity at second year and mask out last year
-            varr[: -1] = varr[1 :]
-            varr[-1].mask = True
+        if self.crop == 'wheat.winter':
+            sh[0] = len(self.year)
+            newvarr = masked_array(zeros(sh), mask = ones(sh))
+            newvarr[: nyears1 + nyears2] = varr
+            varr = newvarr
 
         return varr
 

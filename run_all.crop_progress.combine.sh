@@ -30,11 +30,16 @@ for c in maize soybean sorghum cotton wheat.spring wheat.winter barley; do
     ncks -O -h -x -v planting_dev,anthesis_dev,maturity_dev crop_progress1.nc4 crop_progress1.nc4
 
     # combine files
-    ncks -O -h -d time,0,28 crop_progress1.nc4 crop_progress1.nc4
+    if [ $c = wheat.winter ]; then # winter wheat starts at 2008
+        ncks -O -h -d time,0,27 crop_progress1.nc4 crop_progress1.nc4
+        ncap2 -O -h -s "time=time+28" crop_progress2.nc4 crop_progress2.nc4
+    else
+        ncks -O -h -d time,0,28 crop_progress1.nc4 crop_progress1.nc4
+        ncap2 -O -h -s "time=time+29" crop_progress2.nc4 crop_progress2.nc4
+    fi
     ncks -O -h --mk_rec_dim time crop_progress1.nc4 crop_progress1.nc4
     ncks -O -h -x -v planting_state,anthesis_state,maturity_state crop_progress2.nc4 crop_progress2.nc4
     ncatted -O -h -a units,time,m,c,"years since 1980" crop_progress2.nc4 crop_progress2.nc4
-    ncap2 -O -h -s "time=time+29" crop_progress2.nc4 crop_progress2.nc4
     ncrcat -O -h crop_progress1.nc4 crop_progress2.nc4 $finalfile
     nccopy -d9 -k4 $finalfile $finalfile.2
     mv $finalfile.2 $finalfile
