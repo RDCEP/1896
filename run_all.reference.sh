@@ -3,7 +3,7 @@
 PATH=$PATH:utils
 
 # create county-level reference files
-for c in maize soybean sorghum cotton-upland cotton-pima barley rapeseed; do
+for c in maize soybean sorghum cotton-upland cotton-pima barley rapeseed alfalfa corn-silage other-hay rice peanuts sugarbeets rye beans; do
    echo Running county-level $c . . .
    if [ $c = cotton-upland ] || [ $c = cotton-pima ]; then
       crop=cotton
@@ -37,7 +37,7 @@ bin/reference/combineCotton.py -c data/cotton/final/cotton-upland.reference.coun
                                -o data/cotton/final/cotton.reference.county.nc4
 
 # downscale to grid level
-for c in maize soybean sorghum cotton barley rapeseed; do
+for c in maize soybean sorghum cotton barley rapeseed alfalfa corn-silage other-hay rice peanuts sugarbeets rye beans; do
    echo Running grid-level $c . . .
    bin/reference/downscaleWithMIRCA.py -i data/$c/final/$c.reference.county.nc4 \
                                        -a data/$c/aux/$c.NA.nc4                 \

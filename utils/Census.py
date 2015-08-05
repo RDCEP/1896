@@ -1,9 +1,19 @@
 from csv import reader
+from os.path import isfile
 from numpy.ma import masked_array
-from numpy import double, zeros, ones, unique, logical_and, intersect1d, interp
+from numpy import double, zeros, ones, unique, array, logical_and, intersect1d, interp
 
 class CensusData(object):
     def __init__(self, csvfile, var):
+        if not isfile(csvfile):
+            self.usc      = array([30035]) # random county in montana
+            self.year     = array([2000])
+            self.value    = masked_array(zeros(1), mask = ones(1)) # no data
+            self.data     = array(['other'])
+            self.years    = unique(self.year)
+            self.counties = unique(self.usc)
+            return
+
         data = []
         with open(csvfile, 'rU') as f:
             for row in reader(f):
@@ -44,6 +54,30 @@ class CensusData(object):
         elif var == 'rapeseed':
             sum_area_label = 'CANOLA - ACRES HARVESTED'
             irr_area_label = 'CANOLA, IRRIGATED - ACRES HARVESTED'
+        elif var == 'alfalfa':
+            sum_area_label = 'HAY, ALFALFA - ACRES HARVESTED'
+            irr_area_label = 'HAY, ALFALFA, IRRIGATED - ACRES HARVESTED'
+        elif var == 'other-hay':
+            sum_area_label = 'HAY, (EXCL ALFALFA) - ACRES HARVESTED'
+            irr_area_label = 'HAY, (EXCL ALFALFA), IRRIGATED - ACRES HARVESTED'
+        elif var == 'corn-silage':
+            sum_area_label = 'CORN, SILAGE - ACRES HARVESTED'
+            irr_area_label = 'CORN, SILAGE, IRRIGATED - ACRES HARVESTED'
+        elif var == 'rice':
+            sum_area_label = 'RICE - ACRES HARVESTED'
+            irr_area_label = 'RICE, IRRIGATED - ACRES HARVESTED'
+        elif var == 'peanuts':
+            sum_area_label = 'PEANUTS - ACRES HARVESTED'
+            irr_area_label = 'PEANUTS, IRRIGATED - ACRES HARVESTED'
+        elif var == 'sugarbeets':
+            sum_area_label = 'SUGARBEETS - ACRES HARVESTED'
+            irr_area_label = 'SUGARBEETS, IRRIGATED - ACRES HARVESTED'
+        elif var == 'rye':
+            sum_area_label = 'RYE - ACRES HARVESTED'
+            irr_area_label = 'RYE, IRRIGATED - ACRES HARVESTED'
+        elif var == 'beans':
+            sum_area_label = 'BEANS, DRY EDIBLE, (EXCL LIMA) - ACRES HARVESTED'
+            irr_area_label = 'BEANS, DRY EDIBLE, (EXCL LIMA), IRRIGATED - ACRES HARVESTED'
         else:
             raise Exception('Unknown crop')
 

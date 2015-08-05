@@ -2,7 +2,7 @@ from csv import reader
 from os.path import isfile
 from Census import CensusData
 from numpy.ma import masked_array, isMaskedArray
-from numpy import double, zeros, ones, unique, array, union1d, intersect1d, where, interp, logical_and, arange, sqrt
+from numpy import double, zeros, ones, unique, array, union1d, where, interp, logical_and, arange, sqrt
 
 class ReferenceCombiner(object):
     def __init__(self, yieldfile, yieldirrfile, hareafile, hareairrfile, censusfile, var):
@@ -15,10 +15,10 @@ class ReferenceCombiner(object):
 
         self.irr = ['ir', 'rf', 'sum']
 
-        # find all counties where some yield and area data are present
+        # find all counties where yield and area data are present
         counties1 = union1d(self.ysum.counties, self.yirr.counties)
         counties2 = union1d(self.hsum.counties, self.hirr.counties)
-        self.counties = intersect1d(counties1, counties2)
+        self.counties = union1d(counties1, counties2)
 
         # pull data
         self.yldsum = self.ysum.getVar()
@@ -41,6 +41,10 @@ class ReferenceCombiner(object):
             self.yldconv = 2.47105 * 48 / 2.20462
         elif var in ['cotton-upland', 'cotton-pima', 'rapeseed']:
             self.yldconv = 2.47105 / 2.20462
+        elif var in ['alfalfa', 'other-hay', 'corn-silage']: # ton/acre
+            self.yldconv = 2.47105 * 907.185
+        elif var in ['rice', 'peanuts', 'sugarbeets', 'rye', 'beans']: # lb/acre
+            self.yldconv = 2.47105 * 0.453592
         else:
             raise Exception('Unknown crop')
         self.hvtconv = 1 / 2.47105
@@ -281,6 +285,22 @@ class ReferenceData(object):
             label = 'BARLEY'
         elif var == 'rapeseed':
             label = 'CANOLA'
+        elif var == 'alfalfa':
+            label = 'HAY, ALFALFA'
+        elif var == 'other-hay':
+            label = 'HAY, (EXCL ALFALFA)'
+        elif var == 'corn-silage':
+            label = 'CORN, SILAGE'
+        elif var == 'rice':
+            label = 'RICE'
+        elif var == 'peanuts':
+            label = 'PEANUTS'
+        elif var == 'sugarbeets':
+            label = 'SUGARBEETS'
+        elif var == 'rye':
+            label = 'RYE'
+        elif var == 'beans':
+            label = 'BEANS, DRY EDIBLE'
         else:
             raise Exception('Unknown crop')
 
