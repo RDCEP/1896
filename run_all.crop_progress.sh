@@ -15,5 +15,6 @@ for c in maize soybean sorghum cotton wheat.spring wheat.winter barley; do
                                               -m data/$crop/aux/$crop.mask.0.01.nc4       \
                                               -t 1980,2012                                \
                                               -n $c                                       \
+					      --average_canada                            \
                                               -o data/$crop/final/$c.crop_progress.nc4
 done

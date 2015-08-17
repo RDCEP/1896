@@ -9,7 +9,7 @@ for p in os.environ['PATH'].split(':'): sys.path.append(p)
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
 from numpy.ma import masked_array, masked_where
-from numpy import zeros, ones, logical_not, unique, resize, array, where
+from numpy import zeros, ones, logical_and, unique, resize, array, where
 from CropProgressCountyAdapter import CropProgressCountyAdapterComposite
 
 # parse inputs
@@ -26,6 +26,8 @@ parser.add_option("-m", "--maskfile", dest = "maskfile", default = "maize.mask.n
                   help = "Mask file", metavar = "FILE")
 parser.add_option("-n", "--cropname", dest = "cropname", default = "maize", type = "string",
                   help = "Crop name")
+parser.add_option("--average_canada", action = "store_true", dest = "avecan", default = False,
+                  help = "Whether to average northern latitudes to fill Canada")
 parser.add_option("-o", "--outputfile", dest = "outputfile", default = "maize.crop_progress.2009-2014.nc4", type = "string",
                   help = "Output netcdf4 file", metavar = "FILE")
 options, args = parser.parse_args()
@@ -36,6 +38,7 @@ cmapfile   = options.cmapfile
 careafile  = options.careafile
 maskfile   = options.maskfile
 cropname   = options.cropname
+avecan     = options.avecan
 outputfile = options.outputfile
 
 # load crop progress data
@@ -83,7 +86,11 @@ with nc(maskfile) as f:
     mask = f.variables['mask'][:]
 
 # find unmasked points
-latidx, lonidx = where(logical_not(mask.mask))
+if avecan:
+    mlatd = resize(mlats, (len(mlons), len(mlats))).T
+    latidx, lonidx = where(logical_and(~mask.mask, mlatd <= 49))
+else:
+    latidx, lonidx = where(~mask.mask)
 
 # downscale to grid level
 nyears, nlats, nlons, nper = len(years), len(mlats), len(mlons), len(per)
@@ -111,6 +118,24 @@ for i in range(len(latidx)): # iterate over points
     sdplanting[:, l1, l2] = splanting[:, sidx]
     sdanthesis[:, l1, l2] = santhesis[:, sidx]
     sdmaturity[:, l1, l2] = smaturity[:, sidx]
+
+if avecan:
+    latidx1, lonidx1 = where(logical_and(~mask.mask, logical_and(mlatd >= 48.5, mlatd <= 49)))
+    latidx2, lonidx2 = where(logical_and(~mask.mask, mlatd > 49))
+    cpcan = cdplanting[:, latidx1, lonidx1].mean(axis = 1)
+    cacan = cdanthesis[:, latidx1, lonidx1].mean(axis = 1)
+    cmcan = cdmaturity[:, latidx1, lonidx1].mean(axis = 1)
+    spcan = sdplanting[:, latidx1, lonidx1].mean(axis = 1)
+    sacan = sdanthesis[:, latidx1, lonidx1].mean(axis = 1)
+    smcan = sdmaturity[:, latidx1, lonidx1].mean(axis = 1)
+    for i in range(len(latidx2)):
+        l1, l2 = latidx2[i], lonidx2[i]
+        cdplanting[:, l1, l2] = cpcan
+        cdanthesis[:, l1, l2] = cacan
+        cdmaturity[:, l1, l2] = cmcan
+        sdplanting[:, l1, l2] = spcan
+        sdanthesis[:, l1, l2] = sacan
+        sdmaturity[:, l1, l2] = smcan
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', None)

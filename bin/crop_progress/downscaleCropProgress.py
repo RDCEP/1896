@@ -10,7 +10,7 @@ from optparse import OptionParser
 from netCDF4 import Dataset as nc
 from CropProgress import CropProgressData
 from numpy.ma import masked_array, masked_where
-from numpy import zeros, ones, logical_not, unique, resize, array, where, arange, interp
+from numpy import zeros, ones, logical_and, unique, resize, array, where, arange, interp
 
 # parse inputs
 parser = OptionParser()
@@ -26,6 +26,8 @@ parser.add_option("-t", "--trange", dest = "trange", default = "1980,2012", type
                   help = "Time range")
 parser.add_option("-n", "--cropname", dest = "cropname", default = "maize", type = "string",
                   help = "Crop name")
+parser.add_option("--average_canada", action = "store_true", dest = "avecan", default = False,
+                  help = "Whether to average northern latitudes to fill Canada")
 parser.add_option("-o", "--outputfile", dest = "outputfile", default = "maize.crop_progress.nc4", type = "string",
                   help = "Output netcdf4 file", metavar = "FILE")
 options, args = parser.parse_args()
@@ -36,6 +38,7 @@ smapfile   = options.smapfile
 maskfile   = options.maskfile
 trange     = options.trange
 cropname   = options.cropname
+avecan     = options.avecan
 outputfile = options.outputfile
 
 ymin, ymax = [int(y) for y in trange.split(',')]
@@ -85,7 +88,11 @@ with nc(maskfile) as f:
     mask = f.variables['mask'][:]
 
 # find unmasked points
-latidx, lonidx = where(logical_not(mask.mask))
+if avecan:
+    mlatd = resize(mlats, (len(mlons), len(mlats))).T
+    latidx, lonidx = where(logical_and(~mask.mask, mlatd <= 49))
+else:
+    latidx, lonidx = where(~mask.mask)
 
 # downscale to grid level
 nyears, nlats, nlons, nper = len(years), len(mlats), len(mlons), len(per)
@@ -103,6 +110,18 @@ for i in range(len(latidx)):
     planting[:, l1, l2] = spltinter[:, sidx]
     anthesis[:, l1, l2] = santinter[:, sidx]
     maturity[:, l1, l2] = smatinter[:, sidx]
+
+if avecan:
+    latidx1, lonidx1 = where(logical_and(~mask.mask, logical_and(mlatd >= 48.5, mlatd <= 49)))
+    latidx2, lonidx2 = where(logical_and(~mask.mask, mlatd > 49))
+    pcan = planting[:, latidx1, lonidx1].mean(axis = 1)
+    acan = anthesis[:, latidx1, lonidx1].mean(axis = 1)
+    mcan = maturity[:, latidx1, lonidx1].mean(axis = 1)
+    for i in range(len(latidx2)):
+        l1, l2 = latidx2[i], lonidx2[i]
+        planting[:, l1, l2] = pcan
+        anthesis[:, l1, l2] = acan
+        maturity[:, l1, l2] = mcan
 
 with nc(outputfile, 'w') as f:
     f.createDimension('time', nyears)

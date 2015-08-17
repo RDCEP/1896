@@ -18,6 +18,7 @@ for c in maize soybean sorghum cotton wheat.winter wheat.spring barley rapeseed;
                                                             -a data/$crop/aux/$crop.county.nc4                   \
                                                             -m data/$crop/aux/$crop.mask.0.01.nc4                \
                                                             -n $c                                                \
+							    --average_canada                                     \
                                                             -o $finalfile
     bin/crop_progress_county/fillGaps.py -i $finalfile                         \
                                          -m data/$crop/aux/$crop.mask.0.01.nc4 \
