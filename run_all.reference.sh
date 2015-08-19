@@ -39,11 +39,12 @@ bin/reference/combineCotton.py -c data/cotton/final/cotton-upland.reference.coun
 # downscale to grid level
 for c in maize soybean sorghum cotton barley rapeseed alfalfa corn-silage other-hay rice peanuts sugarbeets rye beans; do
    echo Running grid-level $c . . .
-   bin/reference/downscaleWithMIRCA.py -i data/$c/final/$c.reference.county.nc4 \
-                                       -a data/$c/aux/$c.NA.nc4                 \
-                                       -c data/$c/aux/$c.county.nc4             \
-                                       -f data/common/USA_adm_all_fips.nc4      \
-                                       -m data/$c/aux/$c.mask.0.01.nc4          \
+   bin/reference/downscaleReference.py -i data/$c/final/$c.reference.county.nc4        \
+                                       -a data/$c/aux/$c.NA.nc4                        \
+				       -y data/$c/aux/$c.yield.nc4                     \
+                                       -c data/$c/aux/$c.county.nc4                    \
+                                       -f data/common/USA_CAN_adm_all_fips.US.only.nc4 \
+                                       -m data/$c/aux/$c.mask.0.01.nc4                 \
                                        -o data/$c/final/$c.reference.nc4
    bin/reference/fillGaps.py -i data/$c/final/$c.reference.nc4   \
                              -m data/$c/aux/$c.mask.0.01.nc4     \
@@ -55,14 +56,15 @@ done
 crop=wheat
 for c in wheat.spring wheat.winter; do
    echo Running grid-level $c . . .
-   bin/reference/downscaleWithMIRCA.py -i data/$crop/final/$c.reference.county.nc4  \
-                                       -a data/$crop/aux/$crop.NA.nc4               \
-                                       -c data/$crop/aux/$crop.county.nc4           \
-                                       -f data/common/USA_adm_all_fips.nc4          \
-                                       -m data/$crop/aux/$crop.mask.0.01.nc4        \
+   bin/reference/downscaleReference.py -i data/$crop/final/$c.reference.county.nc4     \
+                                       -a data/$crop/aux/$crop.NA.nc4                  \
+                                       -y data/$crop/aux/$crop.yield.nc4               \
+                                       -c data/$crop/aux/$crop.county.nc4              \
+                                       -f data/common/USA_CAN_adm_all_fips.US.only.nc4 \
+                                       -m data/$crop/aux/$c.mask.0.01.nc4              \
                                        -o data/$crop/final/$c.reference.nc4
    bin/reference/fillGaps.py -i data/$crop/final/$c.reference.nc4   \
-                             -m data/$crop/aux/$crop.mask.0.01.nc4  \
+                             -m data/$crop/aux/$c.mask.0.01.nc4     \
                              -o data/$crop/final/$c.reference.nc4.2
    mv data/$crop/final/$c.reference.nc4.2 data/$crop/final/$c.reference.nc4
 done

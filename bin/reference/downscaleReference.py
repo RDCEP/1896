@@ -3,6 +3,7 @@
 
 # import modules
 from re import findall
+from os.path import isfile
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
 from numpy.ma import masked_array, masked_where
@@ -55,25 +56,30 @@ with nc(areafile) as f:
     asum       = f.variables['sum'][:]
 
 # load yield file
-hasyld = not yieldfile is None
+hasyld = not yieldfile is None and isfile(yieldfile)
 if hasyld:
     with nc(yieldfile) as f:
         ylats, ylons = f.variables['lat'][:], f.variables['lon'][:]
         ytime        = f.variables['time'][:]
         ytime       += int(findall(r'\d+', f.variables['time'].units)[0])
+        yirr         = f.variables['irr'].long_name.split(', ')
         yldfill      = f.variables['yield'][:]
 
+    # select time
+    time0, time1   = max(time[0], ytime[0]),      min(time[-1], ytime[-1])
+    tidx0, tidx1   = where(time  == time0)[0][0], where(time  == time1)[0][0] + 1
+    ytidx0, ytidx1 = where(ytime == time0)[0][0], where(ytime == time1)[0][0] + 1
+    yldfill        = yldfill[ytidx0 : ytidx1]
+
     # get lat/lon map
-    latidx, lonidx = where(~yldfill[0].mask)
+    latidx, lonidx = where(~yldfill[0, :, :, 0].mask)
     latd    = resize(ylats, (len(ylons), len(ylats))).T
     lond    = resize(ylons, (len(ylats), len(ylons)))
     latd    = latd[latidx, lonidx]
     lond    = lond[latidx, lonidx]
     yldfill = yldfill[:, latidx, lonidx]
 
-    time0, time1   = max(time[0], ytime[0]),      min(time[-1], ytime[-1])
-    tidx0, tidx1   = where(time  == time0)[0][0], where(time  == time1)[0][0] + 1
-    ytidx0, ytidx1 = where(ytime == time0)[0][0], where(ytime == time1)[0][0] + 1
+    yiridx, yrfidx, ysumidx = [yirr.index(i) for i in ['ir', 'rf', 'sum']]
 
 # load county-level area file
 with nc(careafile) as f:
@@ -121,9 +127,9 @@ for i in range(len(latidx)):
         # use ray for yield
         if hasyld:
             llidx = ((latd - mlats[l1]) ** 2 + (lond - mlons[l2]) ** 2).argmin()
-            yld[tidx0 : tidx1, l1, l2, iridx]  = yldfill[ytidx0 : ytidx1, llidx]
-            yld[tidx0 : tidx1, l1, l2, rfidx]  = yldfill[ytidx0 : ytidx1, llidx]
-            yld[tidx0 : tidx1, l1, l2, sumidx] = yldfill[ytidx0 : ytidx1, llidx]
+            yld[tidx0 : tidx1, l1, l2, iridx]  = yldfill[:, llidx, yiridx]
+            yld[tidx0 : tidx1, l1, l2, rfidx]  = yldfill[:, llidx, yrfidx]
+            yld[tidx0 : tidx1, l1, l2, sumidx] = yldfill[:, llidx, ysumidx]
         else:
             # use nearest county
             llidx = ((latdc - mlats[l1]) ** 2 + (londc - mlons[l2]) ** 2).argmin()
