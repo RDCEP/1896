@@ -16,12 +16,12 @@ for c in maize soybean sorghum cotton wheat.winter wheat.spring barley rapeseed;
                                                             --inputfile2 data/common/crop_progress.2014.nc4      \
                                                             -c data/common/USA_adm_all_fips.nc4                  \
                                                             -a data/$crop/aux/$crop.county.nc4                   \
-                                                            -m data/$crop/aux/$crop.mask.0.01.nc4                \
+                                                            -m data/$crop/aux/$c.mask.0.01.nc4                   \
                                                             -n $c                                                \
 							    --average_canada                                     \
                                                             -o $finalfile
-    bin/crop_progress_county/fillGaps.py -i $finalfile                         \
-                                         -m data/$crop/aux/$crop.mask.0.01.nc4 \
+    bin/crop_progress_county/fillGaps.py -i $finalfile                      \
+                                         -m data/$crop/aux/$c.mask.0.01.nc4 \
                                          -o $finalfile.2
     mv $finalfile.2 $finalfile
 

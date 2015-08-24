@@ -92,19 +92,6 @@ with nc(careafile) as f:
 with nc(cmapfile) as f:
     cmap = f.variables['county'][:]
 
-# mask counties without data
-cmapd     = cmap.copy()
-ucounties = unique(cmapd)
-ucounties = ucounties[~ucounties.mask]
-for i in range(len(ucounties)):
-    if not ucounties[i] in rcounties:
-        cmapd = masked_where(cmapd == ucounties[i], cmapd)
-latdc = resize(lats, (len(lons), len(lats))).T
-londc = resize(lons, (len(lats), len(lons)))
-latdc = latdc[~cmapd.mask]
-londc = londc[~cmapd.mask]
-cmapd = array(cmapd[~cmapd.mask])
-
 # load mask
 with nc(maskfile) as f:
     mlats, mlons = f.variables['lat'][:], f.variables['lon'][:]
@@ -130,11 +117,6 @@ for i in range(len(latidx)):
             yld[tidx0 : tidx1, l1, l2, iridx]  = yldfill[:, llidx, yiridx]
             yld[tidx0 : tidx1, l1, l2, rfidx]  = yldfill[:, llidx, yrfidx]
             yld[tidx0 : tidx1, l1, l2, sumidx] = yldfill[:, llidx, ysumidx]
-        else:
-            # use nearest county
-            llidx = ((latdc - mlats[l1]) ** 2 + (londc - mlons[l2]) ** 2).argmin()
-            cidx = where(rcounties == cmapd[llidx])[0][0]
-            yld[:, l1, l2, :] = ryld[:, cidx]
 
         # use mirca for area
         area[:, l1, l2, iridx]  = air[l1,  l2]
