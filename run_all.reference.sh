@@ -46,10 +46,6 @@ for c in maize soybean sorghum cotton barley rapeseed alfalfa corn-silage other-
                                        -f data/common/USA_CAN_adm_all_fips.US.only.nc4 \
                                        -m data/$c/aux/$c.mask.0.01.nc4                 \
                                        -o data/$c/final/$c.reference.nc4
-   bin/reference/fillGaps.py -i data/$c/final/$c.reference.nc4   \
-                             -m data/$c/aux/$c.mask.0.01.nc4     \
-                             -o data/$c/final/$c.reference.nc4.2
-   mv data/$c/final/$c.reference.nc4.2 data/$c/final/$c.reference.nc4
 done
 
 # handle special case of wheat separately
@@ -63,14 +59,4 @@ for c in wheat.spring wheat.winter; do
                                        -f data/common/USA_CAN_adm_all_fips.US.only.nc4 \
                                        -m data/$crop/aux/$c.mask.full.nc4              \
                                        -o data/$crop/final/$c.reference.nc4
-   bin/reference/fillGaps.py -i data/$crop/final/$c.reference.nc4   \
-                             -m data/$crop/aux/$c.mask.full.nc4     \
-                             -o data/$crop/final/$c.reference.nc4.2
-   mv data/$crop/final/$c.reference.nc4.2 data/$crop/final/$c.reference.nc4
 done
-
-# combine wheat
-bin/reference/combineWheat.py -s data/wheat/final/wheat.spring.reference.nc4 \
-                              -w data/wheat/final/wheat.winter.reference.nc4 \
-                              -o data/wheat/final/wheat.reference.nc4        \
-                              -m data/wheat/final/wheat.variety.mask.nc4

@@ -6,8 +6,8 @@ from re import findall
 from os.path import isfile
 from optparse import OptionParser
 from netCDF4 import Dataset as nc
-from numpy.ma import masked_array, masked_where
-from numpy import ones, zeros, where, resize, array, unique
+from numpy import ones, zeros, where, resize
+from numpy.ma import masked_array, isMaskedArray
 
 # parse inputs
 parser = OptionParser()
@@ -46,7 +46,7 @@ with nc(inputfile) as f:
 
 time += int(findall(r'\d+', tunits)[0])
 
-iridx, rfidx, sumidx = [irr.index(i) for i in ['ir', 'rf', 'sum']]
+iridxs = [irr.index(i) for i in ['ir', 'rf', 'sum']]
 
 # load area file
 with nc(areafile) as f:
@@ -79,7 +79,7 @@ if hasyld:
     lond    = lond[latidx, lonidx]
     yldfill = yldfill[:, latidx, lonidx]
 
-    yiridx, yrfidx, ysumidx = [yirr.index(i) for i in ['ir', 'rf', 'sum']]
+    yiridxs = [yirr.index(i) for i in ['ir', 'rf', 'sum']]
 
 # load county-level area file
 with nc(careafile) as f:
@@ -110,27 +110,35 @@ for i in range(len(latidx)):
 
     county = cmap[l1, l2]
 
-    if not county in rcounties:
-        # use ray for yield
-        if hasyld:
-            llidx = ((latd - mlats[l1]) ** 2 + (lond - mlons[l2]) ** 2).argmin()
-            yld[tidx0 : tidx1, l1, l2, iridx]  = yldfill[:, llidx, yiridx]
-            yld[tidx0 : tidx1, l1, l2, rfidx]  = yldfill[:, llidx, yrfidx]
-            yld[tidx0 : tidx1, l1, l2, sumidx] = yldfill[:, llidx, ysumidx]
-
-        # use mirca for area
-        area[:, l1, l2, iridx]  = air[l1,  l2]
-        area[:, l1, l2, rfidx]  = arf[l1,  l2]
-        area[:, l1, l2, sumidx] = asum[l1, l2]
-    else:
-        # sample yield
+    if county in rcounties:
+        # use county yield
         cidx1 = where(rcounties == county)[0][0]
         yld[:, l1, l2, :] = ryld[:, cidx1]
 
-        # scale area
+    if hasyld:
+        # fill with yield data where appropriate
+        llidx = ((latd - mlats[l1]) ** 2 + (lond - mlons[l2]) ** 2).argmin()
+
+        for j in range(len(iridxs)):
+            y1 = yld[tidx0 : tidx1, l1, l2, iridxs[j]]
+            y2 = yldfill[:, llidx, yiridxs[j]]
+            if isMaskedArray(y1):
+                y1[y1.mask] = y2[y1.mask]
+                yld[tidx0 : tidx1, l1, l2, iridxs[j]] = y1
+
+    if not county in rcounties:
+        # use mirca area
+        area[:, l1, l2, iridxs[0]] = air[l1,  l2]
+        area[:, l1, l2, iridxs[1]] = arf[l1,  l2]
+        area[:, l1, l2, iridxs[2]] = asum[l1, l2]
+    else:
+        # scale county area
         cidx2 = where(acounties == county)[0][0]
         a_x_rf, a_x_ir = arf[l1, l2], air[l1, l2]
         a_c_rf, a_c_ir = carf[cidx2], cair[cidx2]
+
+        iridx, rfidx, sumidx = iridxs[0], iridxs[1], iridxs[2]
+
         for t in range(nyears):
             a_r_rf, a_r_ir = rarea[t, cidx1, rfidx], rarea[t, cidx1, iridx]
 
