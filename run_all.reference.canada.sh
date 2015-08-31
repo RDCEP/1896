@@ -32,8 +32,9 @@ areavar = area[:]
 tidx, latidx, lonidx, irridx = where(~yldcan.mask)
 yldvar[tidx, latidx, lonidx, irridx] = yldcan[tidx, latidx, lonidx, irridx]
 
-tidx, latidx, lonidx, irridx = where(~areacan.mask)
-areavar[tidx, latidx, lonidx, irridx] = areacan[tidx, latidx, lonidx, irridx]
+if '$c' != 'rapeseed':
+    tidx, latidx, lonidx, irridx = where(~areacan.mask)
+    areavar[tidx, latidx, lonidx, irridx] = areacan[tidx, latidx, lonidx, irridx]
 
 yld[:]  = yldvar
 area[:] = areavar
