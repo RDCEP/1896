@@ -51,6 +51,10 @@ latidx, lonidx = where(~mask.mask) # find unmasked points
 
 with nc(outputfile, 'a') as fo:
     for i in range(len(variables)):
+        dims = fi.variables[variables[i]].dimensions
+        if not 'lat' in dims or not 'lon' in dims:
+            continue
+
         vi = fi.variables[variables[i]][:]
         vo = masked_array(zeros(vi.shape), mask = ones(vi.shape))
 
