@@ -28,7 +28,7 @@ for c in wheat.winter wheat.spring maize soybean sorghum cotton; do
    ncks -h -d irr,0,1 $indir/$crop/final/$c.reference.nc4 reference.nc4
    ncatted -O -h -a long_name,irr,m,c,"ir, rf" reference.nc4 reference.nc4
    /project/joshuaelliott/psims/bin/agg.out.py -i reference.nc4:yield -w weights.nc4 -a $maskfile -n 10 -l time -o $aggfile # yield
-   /project/joshuaelliott/psims/bin/agg.out.py -i reference.nc4:area,area_mirca -t sum -a $maskfile -n 10 -l time -o $aggareafile # area
+   /project/joshuaelliott/psims/bin/agg.out.py -i reference.nc4:area -t sum -a $maskfile -n 10 -l time -o $aggareafile # area
    ncks -h -A $aggareafile $aggfile
    rm weights.nc4 reference.nc4 $aggareafile
 done
